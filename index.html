@@ -1,0 +1,903 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Hazri Attendance</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500..800&family=Geist:wght@400..700&family=Noto+Sans+Devanagari:wght@600&display=swap">
+<style>
+/* Layout: left rail on desktop, floating tab bar on phones. The one bold element is the punch dial on the Today screen; everything else stays quiet. */
+:root {
+  --bg: #EDF0F6;
+  --surface: #FFFFFF;
+  --surface-2: #F4F6FB;
+  --ink: #0E1628;
+  --ink-2: #55627A;
+  --line: #DCE2EE;
+  --accent: #2340F5;
+  --accent-ink: #FFFFFF;
+  --accent-soft: #E2E7FF;
+  --good: #0B8F4D;
+  --warn: #A86B00;
+  --half: #D05A14;
+  --bad: #D4303C;
+  --info: #0A78B5;
+  --holi: #7142E0;
+  --off: #7A869C;
+  --shadow: 0 1px 2px rgba(14,22,40,.06), 0 10px 28px rgba(14,22,40,.06);
+  --font-display: 'Bricolage Grotesque', 'Geist', system-ui, sans-serif;
+  --font-body: 'Geist', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-hindi: 'Noto Sans Devanagari', 'Nirmala UI', sans-serif;
+  --r-lg: 22px;
+  --r-md: 14px;
+  --r-sm: 10px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #080C18; --surface: #101627; --surface-2: #161E33; --ink: #EAF0FF; --ink-2: #94A2BF;
+    --line: #232D47; --accent: #8097FF; --accent-ink: #0A1030; --accent-soft: #1C2654;
+    --good: #3ECF87; --warn: #F2B73D; --half: #FF8F4D; --bad: #FF6B76; --info: #4DB6F5; --holi: #AB8DFF; --off: #7482A0;
+    --shadow: 0 1px 2px rgba(0,0,0,.45), 0 12px 32px rgba(0,0,0,.4);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #080C18; --surface: #101627; --surface-2: #161E33; --ink: #EAF0FF; --ink-2: #94A2BF;
+  --line: #232D47; --accent: #8097FF; --accent-ink: #0A1030; --accent-soft: #1C2654;
+  --good: #3ECF87; --warn: #F2B73D; --half: #FF8F4D; --bad: #FF6B76; --info: #4DB6F5; --holi: #AB8DFF; --off: #7482A0;
+  --shadow: 0 1px 2px rgba(0,0,0,.45), 0 12px 32px rgba(0,0,0,.4);
+  color-scheme: dark;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.5 var(--font-body); -webkit-font-smoothing: antialiased; }
+h1, h2, h3, p { margin: 0; }
+button, input, select, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.ic { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+.num { font-variant-numeric: tabular-nums; }
+.tone-good { --tone: var(--good); } .tone-warn { --tone: var(--warn); } .tone-half { --tone: var(--half); }
+.tone-bad { --tone: var(--bad); } .tone-info { --tone: var(--info); } .tone-holi { --tone: var(--holi); }
+.tone-off { --tone: var(--off); } .tone-accent { --tone: var(--accent); }
+
+/* ---------- shell ---------- */
+.shell { display: grid; grid-template-columns: 252px minmax(0, 1fr); min-height: 100dvh; }
+.rail { position: sticky; top: 0; height: 100dvh; display: flex; flex-direction: column; gap: 22px; padding: 22px 16px; background: var(--surface); border-right: 1px solid var(--line); }
+.brand { display: flex; align-items: center; gap: 10px; padding: 0 6px; font: 700 22px/1 var(--font-display); letter-spacing: -.02em; }
+.brand svg { width: 32px; height: 32px; }
+.nav { display: flex; flex-direction: column; gap: 4px; }
+.nav button { display: flex; align-items: center; gap: 12px; padding: 11px 14px; border: 0; border-radius: var(--r-md); background: transparent; color: var(--ink-2); font-weight: 560; text-align: left; }
+.nav button:hover { background: var(--surface-2); color: var(--ink); }
+.nav button[aria-current="page"] { background: var(--accent-soft); color: var(--accent); }
+.rail-foot { margin-top: auto; display: flex; flex-direction: column; gap: 12px; }
+.who { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.who b { display: block; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.who small { color: var(--ink-2); }
+.who > div { min-width: 0; }
+.avatar { width: 38px; height: 38px; border-radius: 50%; display: grid; place-items: center; color: #fff; font: 700 15px/1 var(--font-display); flex: none; }
+.avatar.lg { width: 84px; height: 84px; font-size: 32px; }
+.main { padding: 30px clamp(16px, 3.2vw, 44px) 56px; max-width: 1200px; width: 100%; min-width: 0; }
+.topbar, .tabbar { display: none; }
+.demo-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; margin-bottom: 22px; padding: 10px 14px; border-radius: var(--r-md); background: var(--accent-soft); color: var(--ink); font-size: 14px; }
+.demo-bar button { margin-left: auto; }
+
+.page-head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px 20px; margin-bottom: 24px; }
+.page-head h1 { font: 700 clamp(28px, 4vw, 38px)/1.1 var(--font-display); letter-spacing: -.03em; text-wrap: balance; }
+.page-head p { color: var(--ink-2); margin-top: 6px; }
+.stack { display: flex; flex-direction: column; gap: 16px; }
+.grid-2 { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 16px; align-items: start; }
+.grid-2.dash { grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); }
+.row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.spread { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.muted { color: var(--ink-2); }
+.small { font-size: 13px; }
+h2.sec { font: 650 17px/1.3 var(--font-display); letter-spacing: -.01em; }
+
+/* ---------- surfaces ---------- */
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg); padding: 20px; box-shadow: var(--shadow); min-width: 0; }
+.card.flat { box-shadow: none; }
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(128px, 1fr)); gap: 10px; }
+.tile { padding: 14px 16px; border-radius: var(--r-md); background: color-mix(in srgb, var(--tone, var(--accent)) 11%, var(--surface)); min-width: 0; }
+.tile b { display: block; font: 700 26px/1.1 var(--font-display); letter-spacing: -.02em; color: var(--tone, var(--accent)); font-variant-numeric: tabular-nums; }
+.tile span { color: var(--ink-2); font-size: 13px; }
+.chip { display: inline-flex; align-items: center; gap: 6px; padding: 3px 11px; border-radius: 99px; font-size: 13px; font-weight: 600; color: var(--tone, var(--ink-2)); background: color-mix(in srgb, var(--tone, var(--ink-2)) 14%, transparent); white-space: nowrap; }
+.dot { width: 9px; height: 9px; border-radius: 50%; background: var(--tone); flex: none; }
+
+/* ---------- controls ---------- */
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 42px; padding: 0 18px; border-radius: 99px; border: 1px solid var(--line); background: var(--surface); font-weight: 600; transition: transform .12s, background .15s; }
+.btn:hover { background: var(--surface-2); }
+.btn:active { transform: scale(.97); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.btn.primary:hover { filter: brightness(1.08); }
+.btn.danger { color: var(--bad); }
+.btn.danger.solid { background: var(--bad); border-color: var(--bad); color: #fff; }
+.btn.sm { min-height: 34px; padding: 0 14px; font-size: 14px; }
+.btn.block { width: 100%; }
+.btn[disabled] { opacity: .5; cursor: not-allowed; }
+.icon-btn { display: grid; place-items: center; width: 38px; height: 38px; border: 1px solid var(--line); border-radius: 50%; background: var(--surface); }
+.icon-btn:hover { background: var(--surface-2); }
+.seg { display: inline-flex; padding: 4px; gap: 2px; border-radius: 99px; background: var(--surface-2); border: 1px solid var(--line); }
+.seg button { display: inline-flex; align-items: center; gap: 6px; min-height: 34px; padding: 0 14px; border: 0; border-radius: 99px; background: transparent; color: var(--ink-2); font-weight: 600; }
+.seg button[aria-pressed="true"] { background: var(--surface); color: var(--ink); box-shadow: var(--shadow); }
+.seg.icons button { padding: 0 10px; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.pick { min-height: 34px; padding: 0 14px; border-radius: 99px; border: 1px solid var(--line); background: var(--surface); font-weight: 560; font-size: 14px; }
+.pick[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.field > span { font-size: 13px; font-weight: 600; color: var(--ink-2); }
+.field input, .field select, .field textarea { width: 100%; min-height: 44px; padding: 10px 14px; border: 1px solid var(--line); border-radius: var(--r-md); background: var(--surface); }
+.field textarea { min-height: 96px; resize: vertical; }
+.field input:focus, .field select:focus, .field textarea:focus { outline: 2px solid var(--accent); outline-offset: 0; border-color: transparent; }
+.fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.fields .wide { grid-column: 1 / -1; }
+.err { color: var(--bad); font-size: 14px; }
+.switch { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.switcher { display: inline-flex; align-items: center; gap: 4px; }
+.switcher strong { min-width: 150px; text-align: center; font: 650 16px/1 var(--font-display); }
+.switcher .icon-btn { border: 0; background: transparent; }
+.search { position: relative; }
+.search .ic { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--ink-2); }
+.search input { padding-left: 42px; }
+
+/* ---------- punch dial ---------- */
+.dial { display: grid; justify-items: center; gap: 18px; }
+.bigclock { font: 700 clamp(46px, 8vw, 68px)/1 var(--font-display); letter-spacing: -.04em; font-variant-numeric: tabular-nums; }
+.bigclock .sec, .bigclock .ap { font-size: .38em; letter-spacing: 0; color: var(--ink-2); margin-left: 4px; }
+.bigclock .colon { animation: blink 2s steps(1) infinite; }
+@keyframes blink { 50% { opacity: .25; } }
+.ring { position: relative; width: min(280px, 72vw); aspect-ratio: 1; }
+.ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+.ring .track { stroke: var(--accent-soft); }
+.ring .bar { stroke: var(--accent); transition: stroke-dashoffset 1.1s cubic-bezier(.2,.7,.2,1), stroke .3s; }
+.ring.done .bar { stroke: var(--good); }
+.ring-mid { position: absolute; inset: 0; display: grid; place-content: center; justify-items: center; gap: 6px; text-align: center; }
+.ring-mid b { font: 700 38px/1 var(--font-display); letter-spacing: -.03em; font-variant-numeric: tabular-nums; }
+.times { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; }
+.punch { min-height: 60px; font-size: 18px; width: 100%; }
+
+/* ---------- calendar / lists ---------- */
+.cal { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; }
+.cal .dow { text-align: center; font-size: 12px; font-weight: 600; color: var(--ink-2); padding-bottom: 4px; }
+.cal .day { aspect-ratio: 1; display: grid; place-items: center; border-radius: 50%; font-size: 14px; font-variant-numeric: tabular-nums; max-width: 52px; width: 100%; justify-self: center; }
+.cal .day.f { background: color-mix(in srgb, var(--tone) 17%, transparent); color: var(--tone); font-weight: 700; }
+.cal .day.today { outline: 2px solid var(--accent); outline-offset: 1px; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; margin-top: 14px; font-size: 13px; color: var(--ink-2); }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.rows { display: flex; flex-direction: column; }
+.item { display: flex; align-items: center; gap: 14px; padding: 14px 4px; border-bottom: 1px solid var(--line); min-width: 0; }
+.item:last-child { border-bottom: 0; }
+button.item { width: 100%; background: none; border-left: 0; border-right: 0; border-top: 0; text-align: left; border-radius: var(--r-sm); padding-inline: 8px; }
+button.item:hover { background: var(--surface-2); }
+.item .grow { flex: 1; min-width: 0; }
+.item .grow b { display: block; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.item .grow small { color: var(--ink-2); }
+.date-badge { width: 52px; text-align: center; flex: none; }
+.date-badge b { display: block; font: 700 22px/1 var(--font-display); }
+.date-badge small { color: var(--ink-2); font-size: 12px; }
+.bar { height: 10px; border-radius: 99px; background: var(--surface-2); overflow: hidden; }
+.bar i { display: block; height: 100%; border-radius: 99px; background: var(--accent); transition: width .6s; }
+.rate { font: 700 clamp(40px, 6vw, 56px)/1 var(--font-display); letter-spacing: -.04em; }
+.tablewrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+th, td { padding: 12px 10px; text-align: right; border-bottom: 1px solid var(--line); white-space: nowrap; }
+th:first-child, td:first-child { text-align: left; }
+th { font-size: 13px; font-weight: 600; color: var(--ink-2); }
+tbody tr { cursor: pointer; }
+tbody tr:hover { background: var(--surface-2); }
+.empty { padding: 34px 12px; text-align: center; color: var(--ink-2); }
+.empty b { display: block; color: var(--ink); font: 650 17px/1.3 var(--font-display); margin-bottom: 4px; }
+
+/* ---------- login ---------- */
+.login { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); min-height: 100dvh; }
+.login-hero { background: var(--accent); color: var(--accent-ink); padding: clamp(24px, 5vw, 64px); display: flex; flex-direction: column; justify-content: space-between; gap: 40px; }
+.login-hero .brand { color: inherit; padding: 0; }
+.login-hero .bigclock .sec, .login-hero .bigclock .ap { color: inherit; opacity: .7; }
+.login-hero .hindi { font: 600 22px/1.4 var(--font-hindi); opacity: .85; }
+.login-hero ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; font-size: 16px; }
+.login-hero li { display: flex; align-items: center; gap: 10px; }
+.login-hero .bigclock { font-size: clamp(56px, 9vw, 104px); }
+.login-form { display: grid; align-content: center; justify-items: center; padding: clamp(24px, 5vw, 64px); position: relative; }
+.login-form > .seg.icons { position: absolute; top: 20px; right: 20px; }
+.login-box { width: min(400px, 100%); display: grid; gap: 18px; }
+.login-box h2 { font: 700 30px/1.15 var(--font-display); letter-spacing: -.03em; }
+.demo-box { padding: 14px; border-radius: var(--r-md); background: var(--surface-2); display: grid; gap: 10px; }
+
+/* ---------- modal + toast ---------- */
+.scrim { position: fixed; inset: 0; background: rgba(8,12,24,.5); z-index: 40; }
+.sheet { position: fixed; z-index: 41; left: 50%; top: 50%; transform: translate(-50%, -50%); width: min(560px, calc(100vw - 32px)); max-height: calc(100dvh - 32px); display: flex; flex-direction: column; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg); box-shadow: 0 24px 80px rgba(0,0,0,.35); animation: pop .18s ease-out; }
+@keyframes pop { from { opacity: 0; transform: translate(-50%, -48%) scale(.98); } }
+.sheet header { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 18px 20px 6px; }
+.sheet h2 { font: 700 20px/1.2 var(--font-display); letter-spacing: -.02em; }
+.sheet-body { padding: 12px 20px 8px; overflow-y: auto; display: grid; gap: 14px; }
+.sheet footer { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 10px; padding: 14px 20px 18px; }
+.sheet textarea.code { min-height: 220px; font: 13px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; white-space: pre; }
+.toast { position: fixed; z-index: 60; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); max-width: calc(100vw - 32px); padding: 12px 20px; border-radius: 99px; background: var(--ink); color: var(--bg); font-weight: 560; box-shadow: var(--shadow); }
+
+/* ---------- phones ---------- */
+@media (max-width: 899px) {
+  .shell { display: block; }
+  .rail { display: none; }
+  .topbar { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px 0; }
+  .topbar .row { gap: 8px; }
+  .main { padding-top: 20px; padding-bottom: 120px; }
+  .tabbar { display: flex; position: fixed; z-index: 30; left: 12px; right: 12px; bottom: calc(10px + env(safe-area-inset-bottom, 0px)); padding: 6px; gap: 2px; border-radius: 28px; background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow); }
+  .tabbar button { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px 2px; border: 0; border-radius: 22px; background: transparent; color: var(--ink-2); font-size: 11px; font-weight: 600; }
+  .tabbar button[aria-current="page"] { background: var(--accent-soft); color: var(--accent); }
+  .grid-2, .grid-2.dash { grid-template-columns: minmax(0, 1fr); }
+  .login { grid-template-columns: minmax(0, 1fr); }
+  .login-hero { gap: 22px; padding-bottom: 32px; }
+  .login-hero ul { display: none; }
+  .login-form > .seg.icons { position: static; justify-self: end; margin-bottom: 18px; }
+  .toast { bottom: calc(96px + env(safe-area-inset-bottom, 0px)); }
+}
+@media (max-width: 520px) {
+  .fields { grid-template-columns: minmax(0, 1fr); }
+  .card { padding: 16px; }
+  .switcher strong { min-width: 120px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-home" viewBox="0 0 24 24"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v9.5h13V10"/></symbol>
+    <symbol id="i-calendar" viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15.5" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4"/></symbol>
+    <symbol id="i-case" viewBox="0 0 24 24"><rect x="3.5" y="7.5" width="17" height="12" rx="3"/><path d="M9 7.5V6a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v1.5M3.5 13h17"/></symbol>
+    <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8.5" r="3.8"/><path d="M4.5 20c.8-3.6 3.8-5.5 7.5-5.5s6.7 1.9 7.5 5.5"/></symbol>
+    <symbol id="i-users" viewBox="0 0 24 24"><circle cx="9" cy="8.5" r="3.4"/><path d="M2.8 19.5c.7-3.2 3.1-4.9 6.2-4.9s5.5 1.7 6.2 4.9"/><path d="M16 5.3a3.2 3.2 0 0 1 0 6.1M18 14.8c1.8.6 2.9 2.1 3.3 4.4"/></symbol>
+    <symbol id="i-chart" viewBox="0 0 24 24"><path d="M5 20v-8M12 20V5M19 20v-5"/></symbol>
+    <symbol id="i-sliders" viewBox="0 0 24 24"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></symbol>
+    <symbol id="i-logout" viewBox="0 0 24 24"><path d="M10 4H6.5A1.5 1.5 0 0 0 5 5.5v13A1.5 1.5 0 0 0 6.5 20H10"/><path d="m14 8 4 4-4 4M18 12H9"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7.5"/></symbol>
+    <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.8"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6 7 7M17 17l1.4 1.4M5.6 18.4 7 17M17 7l1.4-1.4"/></symbol>
+    <symbol id="i-moon" viewBox="0 0 24 24"><path d="M19.5 14.5A8 8 0 0 1 9.5 4.5a8 8 0 1 0 10 10Z"/></symbol>
+    <symbol id="i-auto" viewBox="0 0 24 24"><rect x="3.5" y="4.5" width="17" height="12" rx="2.5"/><path d="M9 20h6M12 16.5V20"/></symbol>
+    <symbol id="i-left" viewBox="0 0 24 24"><path d="m14.5 6-6 6 6 6"/></symbol>
+    <symbol id="i-right" viewBox="0 0 24 24"><path d="m9.5 6 6 6-6 6"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></symbol>
+    <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4.5 7h15M9.5 7V4.8h5V7M6.5 7l.8 12.2h9.4L17.5 7M10 11v5M14 11v5"/></symbol>
+    <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 4v11M7.5 11 12 15.5 16.5 11M5 20h14"/></symbol>
+    <symbol id="i-copy" viewBox="0 0 24 24"><rect x="8.5" y="8.5" width="11" height="11" rx="2.5"/><path d="M15.5 8.5V6.5a2 2 0 0 0-2-2h-7a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h2"/></symbol>
+  </defs>
+</svg>
+<div id="app"></div>
+<div id="modal" hidden></div>
+<div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+
+<script>
+(function () {
+'use strict';
+
+/* ================= helpers ================= */
+var KEY = 'hazri.web.v1', SKEY = 'hazri.web.session';
+var DAY = 864e5;
+function $(s, e) { return (e || document).querySelector(s); }
+var ls = {
+  get: function (k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
+  set: function (k, v) { try { localStorage.setItem(k, v); } catch (e) {} },
+  del: function (k) { try { localStorage.removeItem(k); } catch (e) {} }
+};
+function pad(n) { return String(n).padStart(2, '0'); }
+function ymd(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
+function pd(s) { var p = s.split('-').map(Number); return new Date(p[0], p[1] - 1, p[2]); }
+function addDays(d, n) { var x = new Date(d); x.setDate(x.getDate() + n); return x; }
+function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+var MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+var D3 = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+function ic(n) { return '<svg class="ic" aria-hidden="true"><use href="#i-' + n + '"/></svg>'; }
+function fmtTime(ms) { return ms ? new Date(ms).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true }).toUpperCase() : '--:--'; }
+function rng(r) { return fmtTime(r.in) + (r.out ? ' to ' + fmtTime(r.out) : ' \u00b7 still working'); }
+function fmtDur(ms) { var m = Math.max(0, Math.floor(ms / 60000)); return Math.floor(m / 60) + 'h ' + pad(m % 60) + 'm'; }
+function fmtDate(ds, long) { var d = pd(ds); return D3[d.getDay()] + ', ' + d.getDate() + ' ' + MONTHS[d.getMonth()].slice(0, 3) + (long ? ' ' + d.getFullYear() : ''); }
+function at(d, hm) { var p = hm.split(':').map(Number); return new Date(d.getFullYear(), d.getMonth(), d.getDate(), p[0], p[1]).getTime(); }
+function hue(s) { var h = 0; for (var i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) % 360; return h; }
+function avatar(name, cls) { return '<span class="avatar ' + (cls || '') + '" style="background:hsl(' + hue(name) + ' 52% 38%)">' + esc(name.trim().charAt(0).toUpperCase()) + '</span>'; }
+
+/* ================= data ================= */
+function defaults() {
+  return { employees: [], att: [], leaves: [], holidays: [], nextId: 1, demo: false,
+    settings: { company: 'Your Company', start: '09:30', end: '18:00', grace: 15, halfHrs: 4, off: [0], theme: 'system', adminPin: '0000' } };
+}
+function seedDemo(d) {
+  d.demo = true;
+  d.settings.company = 'Northwind Studio';
+  var today = new Date(); today.setHours(0, 0, 0, 0);
+  var people = [
+    ['EMP001', 'Aarav Mehta', 'Sales', 'Account Executive', '9820011101'],
+    ['EMP002', 'Priya Nair', 'Design', 'Product Designer', '9820011102'],
+    ['EMP003', 'Rohan Gupta', 'Engineering', 'Software Engineer', '9820011103'],
+    ['EMP004', 'Sneha Kulkarni', 'People', 'HR Manager', '9820011104'],
+    ['EMP005', 'Imran Sheikh', 'Accounts', 'Accountant', '9820011105'],
+    ['EMP006', 'Kavya Reddy', 'Support', 'Support Lead', '9820011106']
+  ];
+  people.forEach(function (p) {
+    d.employees.push({ id: d.nextId++, code: p[0], name: p[1], dept: p[2], role: p[3], phone: p[4], pin: '1234', active: true, join: ymd(addDays(today, -90)) });
+  });
+  d.holidays.push({ id: d.nextId++, date: ymd(addDays(today, -9)), name: 'Gandhi Jayanti' });
+  d.holidays.push({ id: d.nextId++, date: '2026-10-20', name: 'Dussehra' });
+  d.holidays.push({ id: d.nextId++, date: '2026-11-08', name: 'Diwali' });
+  var hol = {}; d.holidays.forEach(function (h) { hol[h.date] = 1; });
+  d.leaves.push({ id: d.nextId++, emp: 3, type: 'Sick', from: ymd(addDays(today, -12)), to: ymd(addDays(today, -10)), reason: 'Fever and rest as advised by the doctor.', status: 'APPROVED', at: Date.now() - 13 * DAY });
+  d.leaves.push({ id: d.nextId++, emp: 2, type: 'Casual', from: ymd(addDays(today, 5)), to: ymd(addDays(today, 6)), reason: 'Family function out of town.', status: 'PENDING', at: Date.now() - DAY });
+  d.leaves.push({ id: d.nextId++, emp: 6, type: 'Paid', from: ymd(addDays(today, 9)), to: ymd(addDays(today, 9)), reason: 'Bank and passport appointment.', status: 'PENDING', at: Date.now() - 2 * DAY });
+  var seed = 7;
+  function rnd() { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; }
+  for (var i = 45; i >= 1; i--) {
+    var day = addDays(today, -i), ds = ymd(day);
+    if (d.settings.off.indexOf(day.getDay()) >= 0 || hol[ds]) continue;
+    d.employees.forEach(function (e) {
+      if (e.id === 3 && ds >= d.leaves[0].from && ds <= d.leaves[0].to) return;
+      var r = rnd(), inM, outM, st;
+      if (r < 0.07) return;
+      if (r < 0.2) { st = 'LATE'; inM = 9 * 60 + 50 + Math.floor(rnd() * 50); outM = 18 * 60 + Math.floor(rnd() * 40); }
+      else if (r < 0.25) { st = 'HALF_DAY'; inM = 9 * 60 + 20 + Math.floor(rnd() * 20); outM = 13 * 60 + 15 + Math.floor(rnd() * 30); }
+      else { st = 'PRESENT'; inM = 9 * 60 + Math.floor(rnd() * 40); outM = 18 * 60 + Math.floor(rnd() * 60); }
+      d.att.push({ id: d.nextId++, emp: e.id, date: ds, in: at(day, pad(Math.floor(inM / 60)) + ':' + pad(inM % 60)), out: at(day, pad(Math.floor(outM / 60)) + ':' + pad(outM % 60)), status: st, note: '' });
+    });
+  }
+  var now = new Date(), tds = ymd(now);
+  if (d.settings.off.indexOf(now.getDay()) < 0) {
+    [[2, '09:04'], [3, '09:18'], [4, '09:52'], [5, '09:26']].forEach(function (x) {
+      var t = at(now, x[1]);
+      if (t < now.getTime()) {
+        var late = t > at(now, d.settings.start) + d.settings.grace * 60000;
+        d.att.push({ id: d.nextId++, emp: x[0], date: tds, in: t, out: null, status: late ? 'LATE' : 'PRESENT', note: '' });
+      }
+    });
+  }
+  return d;
+}
+function load() {
+  var raw = ls.get(KEY);
+  if (raw) {
+    try {
+      var d = JSON.parse(raw), base = defaults();
+      d = Object.assign(base, d); d.settings = Object.assign(defaults().settings, d.settings || {});
+      return d;
+    } catch (e) {}
+  }
+  return seedDemo(defaults());
+}
+var db = load();
+var attIndex = null, holSet = null;
+function save() { attIndex = null; holSet = null; ls.set(KEY, JSON.stringify(db)); }
+function nid() { return db.nextId++; }
+function idx() { if (!attIndex) { attIndex = new Map(); db.att.forEach(function (a) { attIndex.set(a.emp + '|' + a.date, a); }); } return attIndex; }
+function hols() { if (!holSet) { holSet = new Set(db.holidays.map(function (h) { return h.date; })); } return holSet; }
+function empById(id) { return db.employees.find(function (e) { return e.id === id; }); }
+function activeEmps() { return db.employees.filter(function (e) { return e.active; }); }
+
+/* ================= attendance logic ================= */
+var ST = {
+  PRESENT: { l: 'Present', c: 'good' }, LATE: { l: 'Late', c: 'warn' }, HALF_DAY: { l: 'Half day', c: 'half' },
+  ABSENT: { l: 'Absent', c: 'bad' }, LEAVE: { l: 'On leave', c: 'info' }, HOLIDAY: { l: 'Holiday', c: 'holi' },
+  WEEKOFF: { l: 'Week off', c: 'off' }, PENDING: { l: 'Not in yet', c: 'off' }, FUTURE: { l: 'Upcoming', c: 'off' }, NA: { l: '-', c: 'off' }
+};
+function statusOf(e, ds) {
+  var r = idx().get(e.id + '|' + ds);
+  if (r) return r.status;
+  if (ds < e.join) return 'NA';
+  if (hols().has(ds)) return 'HOLIDAY';
+  if (db.settings.off.indexOf(pd(ds).getDay()) >= 0) return 'WEEKOFF';
+  if (db.leaves.some(function (l) { return l.emp === e.id && l.status === 'APPROVED' && ds >= l.from && ds <= l.to; })) return 'LEAVE';
+  var t = ymd(new Date());
+  return ds > t ? 'FUTURE' : ds === t ? 'PENDING' : 'ABSENT';
+}
+function chip(st) { var s = ST[st] || ST.NA; return '<span class="chip tone-' + s.c + '">' + s.l + '</span>'; }
+function summary(e, ym) {
+  var p = ym.split('-').map(Number), n = new Date(p[0], p[1], 0).getDate();
+  var s = { P: 0, L: 0, H: 0, A: 0, V: 0, ms: 0 };
+  for (var i = 1; i <= n; i++) {
+    var ds = ym + '-' + pad(i), st = statusOf(e, ds);
+    if (st === 'PRESENT') s.P++; else if (st === 'LATE') s.L++; else if (st === 'HALF_DAY') s.H++; else if (st === 'ABSENT') s.A++; else if (st === 'LEAVE') s.V++;
+    var r = idx().get(e.id + '|' + ds);
+    if (r && r.in && r.out) s.ms += Math.max(0, r.out - r.in);
+  }
+  s.att = s.P + s.L + s.H;
+  return s;
+}
+function nextHoliday() {
+  var t = ymd(new Date());
+  return db.holidays.filter(function (h) { return h.date >= t; }).sort(function (a, b) { return a.date < b.date ? -1 : 1; })[0];
+}
+function csvFor(ym) {
+  var p = ym.split('-').map(Number), n = new Date(p[0], p[1], 0).getDate();
+  function q(v) { return '"' + String(v).replace(/"/g, '""') + '"'; }
+  var short = { PRESENT: 'P', LATE: 'L', HALF_DAY: 'H', ABSENT: 'A', LEAVE: 'LV', HOLIDAY: 'HOL', WEEKOFF: 'WO' };
+  var out = 'Emp ID,Name,Department,Present,Late,Half Day,Absent,Leave,Worked Hours';
+  for (var i = 1; i <= n; i++) out += ',' + i;
+  out += '\n';
+  activeEmps().forEach(function (e) {
+    var s = summary(e, ym);
+    out += [q(e.code), q(e.name), q(e.dept), s.P, s.L, s.H, s.A, s.V, (s.ms / 36e5).toFixed(1)].join(',');
+    for (var j = 1; j <= n; j++) out += ',' + (short[statusOf(e, ym + '-' + pad(j))] || '');
+    out += '\n';
+  });
+  return out;
+}
+
+/* ================= ui state ================= */
+var session = null;
+try { session = JSON.parse(ls.get(SKEY) || 'null'); } catch (e) { session = null; }
+var nowD = new Date();
+var ui = { tab: 'today', month: ymd(nowD).slice(0, 7), day: ymd(nowD), loginRole: 'emp', leaveFilter: 'PENDING', dashFilter: 'ALL', staffQ: '' };
+(function () {
+  var d = new Date(); d.setHours(0, 0, 0, 0);
+  for (var i = 0; i < 7; i++) { if (db.settings.off.indexOf(d.getDay()) < 0 && !hols().has(ymd(d))) break; d = addDays(d, -1); }
+  ui.day = ymd(d);
+})();
+var draft = null, lastFocus = null, toastT = null;
+function me() { return session && session.role === 'emp' ? empById(session.id) : null; }
+if (session && session.role === 'emp' && (!me() || !me().active)) session = null;
+if (session && session.role === 'admin') ui.tab = 'dash';
+function setSession(s) { session = s; if (s) ls.set(SKEY, JSON.stringify(s)); else ls.del(SKEY); }
+function applyTheme() {
+  var t = db.settings.theme, r = document.documentElement;
+  if (t === 'light' || t === 'dark') r.setAttribute('data-theme', t); else r.removeAttribute('data-theme');
+}
+function toast(msg) {
+  var t = $('#toast'); t.textContent = msg; t.hidden = false;
+  clearTimeout(toastT); toastT = setTimeout(function () { t.hidden = true; }, 3200);
+}
+
+/* ================= views ================= */
+function themeSeg() {
+  var cur = db.settings.theme;
+  return '<div class="seg icons" role="group" aria-label="Theme">' +
+    [['system', 'auto', 'Match device'], ['light', 'sun', 'Light'], ['dark', 'moon', 'Dark']].map(function (x) {
+      return '<button data-act="theme" data-v="' + x[0] + '" aria-pressed="' + (cur === x[0]) + '" aria-label="' + x[2] + '" title="' + x[2] + '">' + ic(x[1]) + '</button>';
+    }).join('') + '</div>';
+}
+function logoSvg() {
+  return '<svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="10" fill="var(--accent)"/><path d="m9 16.5 4.5 4.5L23 11.5" fill="none" stroke="var(--accent-ink)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+}
+function clockHtml() {
+  return '<div class="bigclock" aria-label="Current time"><span id="c-h">--</span><span class="colon">:</span><span id="c-m">--</span><span class="sec" id="c-s">:--</span><span class="ap" id="c-a"></span></div>';
+}
+function viewLogin() {
+  var emp = ui.loginRole === 'emp';
+  return '<div class="login">' +
+    '<section class="login-hero">' +
+      '<div class="brand">' + logoSvg() + '<span>Hazri</span></div>' +
+      '<div><p class="hindi" lang="hi">हाज़िरी</p>' + clockHtml() + '<p style="margin-top:10px;opacity:.85" id="c-date"></p></div>' +
+      '<ul><li>' + ic('check') + 'Check in and out with one tap</li><li>' + ic('check') + 'Ask for leave and see the answer</li><li>' + ic('check') + 'Monthly reports that open in Excel</li></ul>' +
+    '</section>' +
+    '<section class="login-form">' + themeSeg() +
+      '<form class="login-box" id="loginForm" autocomplete="off">' +
+        '<div><h2>Log in to Hazri</h2><p class="muted" style="margin-top:6px">Mark your day, check your month.</p></div>' +
+        '<div class="seg" role="group" aria-label="Log in as"><button type="button" data-act="role" data-v="emp" aria-pressed="' + emp + '">Employee</button><button type="button" data-act="role" data-v="admin" aria-pressed="' + !emp + '">Admin</button></div>' +
+        (emp ? '<label class="field"><span>Employee ID</span><input id="lcode" placeholder="For example EMP001" autocapitalize="characters" required></label>' : '') +
+        '<label class="field"><span>' + (emp ? 'PIN' : 'Admin PIN') + '</span><input id="lpin" type="password" inputmode="numeric" placeholder="4 to 8 digits" required></label>' +
+        '<p class="err" id="lerr" role="alert" hidden></p>' +
+        '<button class="btn primary block" type="submit">Log in</button>' +
+        (db.demo ? '<div class="demo-box"><p class="small muted">Exploring? These accounts hold sample data.</p><div class="row"><button type="button" class="btn sm" data-act="demoEmp">Employee: Aarav</button><button type="button" class="btn sm" data-act="demoAdmin">Admin</button></div></div>' : '') +
+        (!emp && db.settings.adminPin === '0000' ? '<p class="small muted">The first admin PIN is 0000. Change it in Settings.</p>' : '') +
+      '</form>' +
+    '</section></div>';
+}
+
+function tabsFor() {
+  return session.role === 'admin'
+    ? [['dash', 'Overview', 'home'], ['staff', 'Staff', 'users'], ['leaves', 'Leaves', 'case'], ['reports', 'Reports', 'chart'], ['settings', 'Settings', 'sliders']]
+    : [['today', 'Today', 'home'], ['history', 'History', 'calendar'], ['leaves', 'Leaves', 'case'], ['profile', 'Profile', 'user']];
+}
+function viewShell() {
+  var tabs = tabsFor(), e = me(), name = session.role === 'admin' ? 'Admin' : e.name;
+  var sub = session.role === 'admin' ? db.settings.company : e.code;
+  var nav = tabs.map(function (t) { return '<button data-act="nav" data-v="' + t[0] + '"' + (ui.tab === t[0] ? ' aria-current="page"' : '') + '>' + ic(t[2]) + '<span>' + t[1] + '</span></button>'; }).join('');
+  var body = session.role === 'admin' ? adminView() : empView();
+  return '<div class="shell">' +
+    '<aside class="rail"><div class="brand">' + logoSvg() + '<span>Hazri</span></div><nav class="nav" aria-label="Main">' + nav + '</nav>' +
+      '<div class="rail-foot">' + themeSeg() + '<div class="who">' + avatar(name) + '<div><b>' + esc(name) + '</b><small>' + esc(sub) + '</small></div></div>' +
+      '<button class="btn block" data-act="logout">' + ic('logout') + 'Log out</button></div></aside>' +
+    '<div><div class="topbar"><div class="brand">' + logoSvg() + '<span>Hazri</span></div><div class="row">' + themeSeg() + '<button class="icon-btn" data-act="logout" aria-label="Log out">' + ic('logout') + '</button></div></div>' +
+    '<main class="main">' + (db.demo && session.role === 'admin' ? '<div class="demo-bar"><span>You are looking at sample data.</span><button class="btn sm" data-act="freshAsk">Remove sample data</button></div>' : '') + body + '</main></div>' +
+    '<nav class="tabbar" aria-label="Main">' + nav + '</nav></div>';
+}
+function empView() {
+  var e = me();
+  return { today: viewToday, history: viewHistory, leaves: viewMyLeaves, profile: viewProfile }[ui.tab](e);
+}
+function adminView() {
+  return { dash: viewDash, staff: viewStaff, leaves: viewAdminLeaves, reports: viewReports, settings: viewSettings }[ui.tab]();
+}
+function head(title, sub, right) {
+  return '<div class="page-head"><div><h1>' + title + '</h1>' + (sub ? '<p>' + sub + '</p>' : '') + '</div>' + (right || '') + '</div>';
+}
+function monthSwitch() {
+  var p = ui.month.split('-').map(Number);
+  return '<div class="switcher"><button class="icon-btn" data-act="mPrev" aria-label="Previous month">' + ic('left') + '</button><strong>' + MONTHS[p[1] - 1] + ' ' + p[0] + '</strong><button class="icon-btn" data-act="mNext" aria-label="Next month">' + ic('right') + '</button></div>';
+}
+function daySwitch() {
+  var isToday = ui.day === ymd(new Date());
+  return '<div class="switcher"><button class="icon-btn" data-act="dPrev" aria-label="Previous day">' + ic('left') + '</button><strong>' + (isToday ? 'Today, ' + fmtDate(ui.day).slice(5) : fmtDate(ui.day, true)) + '</strong><button class="icon-btn" data-act="dNext" aria-label="Next day">' + ic('right') + '</button></div>';
+}
+function tiles(s) {
+  return '<div class="tiles">' +
+    [['Present', s.P, 'good'], ['Late', s.L, 'warn'], ['Half day', s.H, 'half'], ['Absent', s.A, 'bad'], ['On leave', s.V, 'info'], ['Hours worked', fmtDur(s.ms), 'accent']]
+      .map(function (t) { return '<div class="tile tone-' + t[2] + '"><b>' + t[1] + '</b><span>' + t[0] + '</span></div>'; }).join('') + '</div>';
+}
+function calendar(e, ym) {
+  var p = ym.split('-').map(Number), first = new Date(p[0], p[1] - 1, 1), n = new Date(p[0], p[1], 0).getDate();
+  var off = (first.getDay() + 6) % 7, today = ymd(new Date()), h = '<div class="cal">';
+  ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].forEach(function (d) { h += '<div class="dow">' + d.charAt(0) + '</div>'; });
+  for (var i = 0; i < off; i++) h += '<div></div>';
+  for (var d = 1; d <= n; d++) {
+    var ds = ym + '-' + pad(d), st = statusOf(e, ds), filled = ['PRESENT', 'LATE', 'HALF_DAY', 'ABSENT', 'LEAVE', 'HOLIDAY'].indexOf(st) >= 0;
+    h += '<div class="day tone-' + (ST[st] || ST.NA).c + (filled ? ' f' : '') + (ds === today ? ' today' : '') + '" title="' + fmtDate(ds) + ': ' + (ST[st] || ST.NA).l + '">' + d + '</div>';
+  }
+  h += '</div><div class="legend">' + ['PRESENT', 'LATE', 'HALF_DAY', 'ABSENT', 'LEAVE', 'HOLIDAY'].map(function (k) {
+    return '<span class="tone-' + ST[k].c + '"><i class="dot"></i>' + ST[k].l + '</span>';
+  }).join('') + '</div>';
+  return h;
+}
+
+/* ----- employee ----- */
+function viewToday(e) {
+  var ds = ymd(new Date()), r = idx().get(e.id + '|' + ds), st = statusOf(e, ds);
+  var canIn = !(r && r.in), canOut = !!(r && r.in && !r.out), s = summary(e, ds.slice(0, 7)), nh = nextHoliday();
+  var C = 2 * Math.PI * 104, g = new Date().getHours();
+  var greet = g < 12 ? 'Good morning' : g < 17 ? 'Good afternoon' : 'Good evening';
+  return head(greet + ', ' + esc(e.name.split(' ')[0]), '<span id="c-date"></span>') +
+    '<div class="grid-2"><section class="card"><div class="dial">' + clockHtml() +
+      '<div class="ring" id="ring" data-in="' + (r && r.in || '') + '" data-out="' + (r && r.out || '') + '"><svg viewBox="0 0 240 240"><circle class="track" cx="120" cy="120" r="104" fill="none" stroke-width="14"/><circle class="bar" id="ring-bar" cx="120" cy="120" r="104" fill="none" stroke-width="14" stroke-linecap="round" stroke-dasharray="' + C.toFixed(2) + '" stroke-dashoffset="' + C.toFixed(2) + '"/></svg>' +
+        '<div class="ring-mid"><b id="worked">0h 00m</b><span class="muted small">worked today</span>' + chip(st) + '</div></div>' +
+      '<div class="times"><div class="tile tone-accent"><b class="num">' + (r && r.in ? fmtTime(r.in) : 'Not yet') + '</b><span>Checked in</span></div><div class="tile tone-half"><b class="num">' + (r && r.out ? fmtTime(r.out) : 'Not yet') + '</b><span>Checked out</span></div></div>' +
+      '<button class="btn primary punch" data-act="punch"' + (!canIn && !canOut ? ' disabled' : '') + '>' + ic('check') + (canIn ? 'Check in' : canOut ? 'Check out' : 'Done for today') + '</button>' +
+      ((st === 'HOLIDAY' || st === 'WEEKOFF') && canIn ? '<p class="small muted">Today is a ' + (st === 'HOLIDAY' ? 'holiday' : 'weekly off') + '. Check in only if you are working.</p>' : '') +
+    '</div></section>' +
+    '<div class="stack"><section class="card"><div class="spread" style="margin-bottom:14px"><h2 class="sec">This month</h2><span class="muted small">' + MONTHS[new Date().getMonth()] + '</span></div>' + tiles(s) + '</section>' +
+      '<section class="card"><h2 class="sec" style="margin-bottom:12px">Your shift</h2><div class="rows">' +
+        '<div class="item"><div class="grow"><b>Working hours</b><small>' + db.settings.start + ' to ' + db.settings.end + '</small></div></div>' +
+        '<div class="item"><div class="grow"><b>Grace time</b><small>Late after ' + db.settings.grace + ' minutes</small></div></div>' +
+        '<div class="item"><div class="grow"><b>Next holiday</b><small>' + (nh ? esc(nh.name) + ', ' + fmtDate(nh.date) : 'None added yet') + '</small></div></div></div></section></div></div>';
+}
+function viewHistory(e) {
+  var s = summary(e, ui.month), today = ymd(new Date()), p = ui.month.split('-').map(Number), n = new Date(p[0], p[1], 0).getDate(), rows = '';
+  for (var i = n; i >= 1; i--) {
+    var ds = ui.month + '-' + pad(i); if (ds > today) continue;
+    var st = statusOf(e, ds); if (st === 'NA') continue;
+    var r = idx().get(e.id + '|' + ds), d = pd(ds);
+    rows += '<div class="item"><div class="date-badge"><b>' + i + '</b><small>' + D3[d.getDay()] + '</small></div><div class="grow">' + chip(st) +
+      (r && r.in ? '<small style="display:block;margin-top:4px">' + rng(r) + '</small>' : '') + (r && r.note ? '<small style="display:block">' + esc(r.note) + '</small>' : '') + '</div>' +
+      (r && r.in && r.out ? '<b class="num">' + fmtDur(r.out - r.in) + '</b>' : '') + '</div>';
+  }
+  return head('History', 'Your attendance, day by day.', monthSwitch()) +
+    '<div class="grid-2"><section class="card">' + calendar(e, ui.month) + '</section><div class="stack"><section class="card">' + tiles(s) + '</section>' +
+    '<section class="card"><h2 class="sec">Daily log</h2><div class="rows">' + (rows || '<div class="empty"><b>No days to show</b>Nothing has been recorded for this month yet.</div>') + '</div></section></div></div>';
+}
+function leaveCard(l, owner, actions) {
+  var days = Math.round((pd(l.to) - pd(l.from)) / DAY) + 1, tone = l.status === 'APPROVED' ? 'good' : l.status === 'REJECTED' ? 'bad' : 'warn';
+  return '<div class="card flat"><div class="spread"><div style="min-width:0">' + (owner ? '<b>' + esc(owner) + '</b><br><span class="muted">' + esc(l.type) + ' leave</span>' : '<b>' + esc(l.type) + ' leave</b>') + '</div>' +
+    '<span class="chip tone-' + tone + '">' + l.status.charAt(0) + l.status.slice(1).toLowerCase() + '</span></div>' +
+    '<p style="margin-top:10px;font-weight:600">' + (l.from === l.to ? fmtDate(l.from) : fmtDate(l.from) + ' to ' + fmtDate(l.to)) + ' <span class="muted" style="font-weight:400">(' + days + (days === 1 ? ' day' : ' days') + ')</span></p>' +
+    (l.reason ? '<p class="muted" style="margin-top:4px">' + esc(l.reason) + '</p>' : '') + (actions ? '<div class="row" style="margin-top:12px">' + actions + '</div>' : '') + '</div>';
+}
+function viewMyLeaves(e) {
+  var mine = db.leaves.filter(function (l) { return l.emp === e.id; }).sort(function (a, b) { return b.at - a.at; });
+  return head('Leaves', 'Ask for time off and track the answer.', '<button class="btn primary" data-act="leaveNew">' + ic('plus') + 'Apply for leave</button>') +
+    '<div class="stack" style="max-width:720px">' + (mine.length ? mine.map(function (l) {
+      return leaveCard(l, null, l.status === 'PENDING' ? '<button class="btn sm danger" data-act="leaveCancel" data-id="' + l.id + '">Cancel request</button>' : '');
+    }).join('') : '<div class="card empty"><b>No leave requests yet</b>When you apply, the request and its status appear here.</div>') + '</div>';
+}
+function viewProfile(e) {
+  return head('Profile', 'Your details and sign-in.') + '<div class="stack" style="max-width:640px"><section class="card"><div class="row" style="gap:18px;margin-bottom:10px">' + avatar(e.name, 'lg') + '<div><h2 class="sec" style="font-size:22px">' + esc(e.name) + '</h2><p class="muted">' + esc(e.code) + '</p></div></div><div class="rows">' +
+    [['Department', e.dept], ['Designation', e.role], ['Phone', e.phone], ['Joined', fmtDate(e.join, true)], ['Company', db.settings.company]].map(function (x) { return '<div class="item"><span class="muted" style="width:110px">' + x[0] + '</span><b style="font-weight:600">' + esc(x[1] || '-') + '</b></div>'; }).join('') + '</div></section>' +
+    '<section class="card spread"><div><h2 class="sec">PIN</h2><p class="muted small">Change the PIN you use to log in.</p></div><button class="btn" data-act="pinOpen">Change PIN</button></section></div>';
+}
+
+/* ----- admin ----- */
+function dashRows() {
+  var f = ui.dashFilter;
+  return activeEmps().map(function (e) { return { e: e, st: statusOf(e, ui.day) }; }).filter(function (x) {
+    if (f === 'ALL') return true;
+    if (f === 'ABSENT') return x.st === 'ABSENT' || x.st === 'PENDING';
+    return x.st === f;
+  });
+}
+function viewDash() {
+  var all = activeEmps().map(function (e) { return statusOf(e, ui.day); });
+  function c(k) { return all.filter(function (s) { return s === k; }).length; }
+  var att = c('PRESENT') + c('LATE') + c('HALF_DAY'), rate = all.length ? Math.round(att / all.length * 100) : 0, out = c('ABSENT') + c('PENDING');
+  var rows = dashRows();
+  return head('Overview', esc(db.settings.company), daySwitch()) +
+    '<div class="grid-2 dash"><section class="card"><p class="muted">Attendance rate</p><p class="rate num">' + rate + '%</p><div class="bar" style="margin:10px 0 8px"><i style="width:' + rate + '%"></i></div><p class="muted small">' + att + ' of ' + all.length + ' employees attended</p></section>' +
+    '<section class="card"><div class="tiles">' + [['Present', c('PRESENT'), 'good'], ['Late', c('LATE'), 'warn'], ['Half day', c('HALF_DAY'), 'half'], ['On leave', c('LEAVE'), 'info'], ['Absent or not in', out, 'bad'], ['Total staff', all.length, 'accent']]
+      .map(function (t) { return '<div class="tile tone-' + t[2] + '"><b>' + t[1] + '</b><span>' + t[0] + '</span></div>'; }).join('') + '</div></section></div>' +
+    '<section class="card" style="margin-top:16px"><div class="spread" style="margin-bottom:8px;flex-wrap:wrap"><h2 class="sec">Employees</h2><div class="chips">' +
+      [['ALL', 'All'], ['PRESENT', 'Present'], ['LATE', 'Late'], ['ABSENT', 'Absent'], ['LEAVE', 'On leave']].map(function (x) { return '<button class="pick" data-act="dashFilter" data-v="' + x[0] + '" aria-pressed="' + (ui.dashFilter === x[0]) + '">' + x[1] + '</button>'; }).join('') +
+    '</div></div><div class="rows">' + (rows.length ? rows.map(function (x) {
+      var r = idx().get(x.e.id + '|' + ui.day);
+      return '<button class="item" data-act="markOpen" data-id="' + x.e.id + '">' + avatar(x.e.name) + '<span class="grow"><b>' + esc(x.e.name) + '</b><small>' + (r && r.in ? rng(r) : esc(x.e.dept || x.e.code)) + '</small></span>' + chip(x.st) + '</button>';
+    }).join('') : '<div class="empty"><b>' + (activeEmps().length ? 'No one matches this filter' : 'No employees yet') + '</b>' + (activeEmps().length ? 'Try another status.' : 'Open Staff and add the first employee.') + '</div>') + '</div></section>';
+}
+function staffRows() {
+  var q = ui.staffQ.trim().toLowerCase();
+  var list = db.employees.filter(function (e) { return !q || (e.name + ' ' + e.code + ' ' + e.dept).toLowerCase().indexOf(q) >= 0; });
+  if (!list.length) return '<div class="empty"><b>' + (db.employees.length ? 'No match' : 'No employees yet') + '</b>' + (db.employees.length ? 'Check the spelling or search by ID.' : 'Add the first employee to start tracking attendance.') + '</div>';
+  return list.map(function (e) {
+    return '<button class="item" data-act="staffEdit" data-id="' + e.id + '">' + avatar(e.name) + '<span class="grow"><b>' + esc(e.name) + '</b><small>' + esc([e.code, e.role, e.dept].filter(Boolean).join('  ·  ')) + '</small></span>' + (e.active ? '' : '<span class="chip tone-bad">Inactive</span>') + '</button>';
+  }).join('');
+}
+function viewStaff() {
+  return head('Staff', db.employees.length + (db.employees.length === 1 ? ' employee' : ' employees'), '<button class="btn primary" data-act="staffNew">' + ic('plus') + 'Add employee</button>') +
+    '<section class="card"><label class="field search">' + ic('search') + '<input id="staffQ" type="search" aria-label="Search employees" placeholder="Search by name, ID or department" value="' + esc(ui.staffQ) + '"></label><div class="rows" id="staffList" style="margin-top:8px">' + staffRows() + '</div></section>';
+}
+function viewAdminLeaves() {
+  var f = ui.leaveFilter, list = db.leaves.filter(function (l) { return f === 'ALL' || l.status === f; }).sort(function (a, b) { return b.at - a.at; });
+  var pending = db.leaves.filter(function (l) { return l.status === 'PENDING'; }).length;
+  return head('Leave requests', pending + ' waiting for a decision') +
+    '<div class="chips" style="margin-bottom:16px">' + [['PENDING', 'Pending'], ['APPROVED', 'Approved'], ['REJECTED', 'Rejected'], ['ALL', 'All']].map(function (x) { return '<button class="pick" data-act="leaveFilter" data-v="' + x[0] + '" aria-pressed="' + (f === x[0]) + '">' + x[1] + '</button>'; }).join('') + '</div>' +
+    '<div class="stack" style="max-width:760px">' + (list.length ? list.map(function (l) {
+      var e = empById(l.emp);
+      return leaveCard(l, e ? e.name : 'Removed employee', l.status === 'PENDING' ? '<button class="btn sm" data-act="leaveDecide" data-id="' + l.id + '" data-v="no">Reject</button><button class="btn sm primary" data-act="leaveDecide" data-id="' + l.id + '" data-v="yes">Approve</button>' : '');
+    }).join('') : '<div class="card empty"><b>Nothing here</b>No requests match this filter.</div>') + '</div>';
+}
+function viewReports() {
+  var emps = activeEmps();
+  return head('Reports', 'Monthly attendance for every active employee.', '<div class="row">' + monthSwitch() + '<button class="btn primary" data-act="csv">' + ic('download') + 'Export CSV</button></div>') +
+    '<section class="card"><div class="tablewrap"><table><thead><tr><th>Employee</th><th>Present</th><th>Late</th><th>Half</th><th>Absent</th><th>Leave</th><th>Hours</th></tr></thead><tbody>' +
+    (emps.length ? emps.map(function (e) {
+      var s = summary(e, ui.month);
+      return '<tr data-act="calOpen" data-id="' + e.id + '"><td><span class="row" style="flex-wrap:nowrap;gap:10px">' + avatar(e.name) + '<span><b style="font-weight:600">' + esc(e.name) + '</b><br><small class="muted">' + esc(e.code) + '</small></span></span></td><td>' + s.P + '</td><td>' + s.L + '</td><td>' + s.H + '</td><td>' + s.A + '</td><td>' + s.V + '</td><td>' + fmtDur(s.ms) + '</td></tr>';
+    }).join('') : '<tr><td colspan="7" class="empty" style="text-align:center">Add employees to see reports.</td></tr>') + '</tbody></table></div></section>' +
+    '<p class="muted small" style="margin-top:12px">Select an employee to see their month on a calendar.</p>';
+}
+function viewSettings() {
+  var s = db.settings;
+  var holidays = db.holidays.slice().sort(function (a, b) { return a.date < b.date ? -1 : 1; }).map(function (h) {
+    return '<div class="item"><div class="grow"><b>' + esc(h.name) + '</b><small>' + fmtDate(h.date, true) + '</small></div><button class="icon-btn" data-act="holidayDel" data-id="' + h.id + '" aria-label="Delete ' + esc(h.name) + '">' + ic('trash') + '</button></div>';
+  }).join('') || '<div class="empty">No holidays added.</div>';
+  return head('Settings', 'Working hours, holidays and security.') +
+    '<div class="grid-2"><div class="stack">' +
+    '<section class="card stack"><h2 class="sec">Company</h2><label class="field"><span>Company name</span><input id="s-company" data-set="company" value="' + esc(s.company) + '"></label></section>' +
+    '<section class="card stack"><h2 class="sec">Shift and rules</h2><div class="fields"><label class="field"><span>Shift starts</span><input type="time" data-set="start" value="' + s.start + '"></label><label class="field"><span>Shift ends</span><input type="time" data-set="end" value="' + s.end + '"></label>' +
+      '<label class="field"><span>Late after (minutes)</span><input type="number" min="0" max="120" data-set="grace" value="' + s.grace + '"></label><label class="field"><span>Half day if under (hours)</span><input type="number" min="1" max="12" data-set="halfHrs" value="' + s.halfHrs + '"></label></div>' +
+      '<div><p class="muted small" style="margin-bottom:8px">Weekly off</p><div class="chips">' + [1, 2, 3, 4, 5, 6, 0].map(function (d) { return '<button class="pick" data-act="toggleOff" data-d="' + d + '" aria-pressed="' + (s.off.indexOf(d) >= 0) + '">' + D3[d] + '</button>'; }).join('') + '</div></div></section>' +
+    '<section class="card stack"><div class="spread"><h2 class="sec">Holidays</h2><button class="btn sm" data-act="holidayNew">' + ic('plus') + 'Add</button></div><div class="rows">' + holidays + '</div></section></div>' +
+    '<div class="stack"><section class="card stack"><h2 class="sec">Appearance</h2>' + themeSeg() + '</section>' +
+    '<section class="card spread"><div><h2 class="sec">Admin PIN</h2><p class="muted small">Used to open the admin side.</p></div><button class="btn" data-act="pinOpen">Change PIN</button></section>' +
+    '<section class="card stack"><h2 class="sec">Your data</h2><p class="muted small">Everything is saved in this browser only. Back it up to move it to another device or browser.</p><div class="row"><button class="btn" data-act="backup">Back up</button><button class="btn" data-act="restoreOpen">Restore</button></div></section></div></div>';
+}
+
+/* ================= render ================= */
+function render() {
+  applyTheme();
+  $('#app').innerHTML = session ? viewShell() : viewLogin();
+  tick(true);
+}
+function tick(first) {
+  var n = new Date(), h = n.getHours() % 12 || 12;
+  var el = $('#c-h'); if (el) { el.textContent = pad(h); $('#c-m').textContent = pad(n.getMinutes()); $('#c-s').textContent = ':' + pad(n.getSeconds()); $('#c-a').textContent = n.getHours() < 12 ? 'AM' : 'PM'; }
+  var dt = $('#c-date'); if (dt) dt.textContent = D3[n.getDay()] + ', ' + n.getDate() + ' ' + MONTHS[n.getMonth()] + ' ' + n.getFullYear();
+  var ring = $('#ring');
+  if (ring) {
+    var i = Number(ring.dataset.in), o = Number(ring.dataset.out), w = i ? ((o || n.getTime()) - i) : 0;
+    var shift = Math.max(60, (at(n, db.settings.end) - at(n, db.settings.start)) / 60000) * 60000;
+    var C = 2 * Math.PI * 104, p = Math.min(1, w / shift);
+    $('#worked').textContent = fmtDur(w);
+    $('#ring-bar').style.opacity = w > 0 ? 1 : 0;
+    $('#ring-bar').style.strokeDashoffset = (C * (1 - p)).toFixed(2);
+    ring.classList.toggle('done', !!o);
+  }
+}
+setInterval(function () { tick(false); }, 1000);
+
+/* ================= modal ================= */
+function modal(title, body, foot) {
+  var m = $('#modal'); lastFocus = document.activeElement;
+  m.innerHTML = '<div class="scrim" data-act="closeModal"></div><div class="sheet" role="dialog" aria-modal="true" aria-labelledby="mt"><header><h2 id="mt">' + title + '</h2><button class="icon-btn" data-act="closeModal" aria-label="Close">' + ic('x') + '</button></header><div class="sheet-body">' + body + '</div>' + (foot ? '<footer>' + foot + '</footer>' : '') + '</div>';
+  m.hidden = false;
+  var f = $('input:not([type=hidden]), select, textarea', m); if (f) f.focus();
+}
+function closeModal() { var m = $('#modal'); m.hidden = true; m.innerHTML = ''; draft = null; if (lastFocus && lastFocus.focus) { try { lastFocus.focus(); } catch (e) {} } }
+function v(id) { var e = document.getElementById(id); return e ? e.value : ''; }
+function showErr(msg) { var e = $('#merr'); if (e) { e.textContent = msg; e.hidden = false; } }
+function errP() { return '<p class="err" id="merr" role="alert" hidden></p>'; }
+function field(id, label, val, extra, cls) { return '<label class="field ' + (cls || '') + '"><span>' + label + '</span><input id="' + id + '" value="' + esc(val == null ? '' : val) + '" ' + (extra || '') + '></label>'; }
+function footBtns(label, act, id) { return '<button class="btn" data-act="closeModal">Cancel</button><button class="btn primary" data-act="' + act + '"' + (id ? ' data-id="' + id + '"' : '') + '>' + label + '</button>'; }
+function copyText(text, ta) {
+  var done = function () { toast('Copied'); }, fail = function () { if (ta) { ta.focus(); ta.select(); } toast('Select the text and press Ctrl+C to copy'); };
+  try { navigator.clipboard.writeText(text).then(done, fail); } catch (e) { fail(); }
+}
+function download(name, text, mime) {
+  try {
+    var u = URL.createObjectURL(new Blob([text], { type: mime })), a = document.createElement('a');
+    a.href = u; a.download = name; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function () { URL.revokeObjectURL(u); }, 2000);
+    toast('Saving ' + name + '. If nothing downloads, use Copy.');
+  } catch (e) { toast('Download is not available here. Use Copy instead.'); }
+}
+
+/* ================= actions ================= */
+function doLogin() {
+  var err = $('#lerr'), pin = v('lpin').trim();
+  function bad(m) { err.textContent = m; err.hidden = false; }
+  if (ui.loginRole === 'admin') {
+    if (pin !== db.settings.adminPin) return bad('That PIN is not right.');
+    setSession({ role: 'admin' }); ui.tab = 'dash';
+  } else {
+    var code = v('lcode').trim().toLowerCase(), e = db.employees.find(function (x) { return x.code.toLowerCase() === code; });
+    if (!e) return bad('No employee with that ID. Ask your admin.');
+    if (!e.active) return bad('This account is switched off. Ask your admin.');
+    if (e.pin !== pin) return bad('That PIN is not right.');
+    setSession({ role: 'emp', id: e.id }); ui.tab = 'today';
+  }
+  render();
+}
+function pinModal() {
+  modal('Change PIN', field('p0', 'Current PIN', '', 'type="password" inputmode="numeric"') + field('p1', 'New PIN (4 to 8 digits)', '', 'type="password" inputmode="numeric"') + field('p2', 'Confirm new PIN', '', 'type="password" inputmode="numeric"') + errP(), footBtns('Save PIN', 'pinSave'));
+}
+function markModal(e) {
+  var r = idx().get(e.id + '|' + ui.day), st = r ? r.status : 'PRESENT';
+  draft = { emp: e.id, status: st };
+  function tm(ms, fb) { return ms ? pad(new Date(ms).getHours()) + ':' + pad(new Date(ms).getMinutes()) : fb; }
+  modal(esc(e.name), '<p class="muted" style="margin-top:-8px">' + fmtDate(ui.day, true) + '</p><div class="chips" id="mstat">' +
+    [['PRESENT', 'Present'], ['LATE', 'Late'], ['HALF_DAY', 'Half day'], ['ABSENT', 'Absent'], ['LEAVE', 'Leave']].map(function (x) { return '<button class="pick" data-act="markStatus" data-v="' + x[0] + '" aria-pressed="' + (st === x[0]) + '">' + x[1] + '</button>'; }).join('') + '</div>' +
+    '<div class="fields" id="mtimes"' + (['PRESENT', 'LATE', 'HALF_DAY'].indexOf(st) < 0 ? ' hidden' : '') + '><label class="field"><span>Check-in</span><input id="m-in" type="time" value="' + tm(r && r.in, db.settings.start) + '"></label><label class="field"><span>Check-out</span><input id="m-out" type="time" value="' + tm(r && r.out, db.settings.end) + '"></label></div>' +
+    field('m-note', 'Note (optional)', r ? r.note : '') + errP(),
+    (r ? '<button class="btn danger" data-act="markReset" data-id="' + e.id + '">Reset to automatic</button>' : '') + footBtns('Save', 'markSave', e.id));
+}
+function staffModal(e) {
+  e = e || { name: '', code: 'EMP' + pad(db.employees.length + 1).padStart(3, '0'), phone: '', dept: '', role: '', pin: '1234', join: ymd(new Date()), active: true };
+  var isNew = !e.id;
+  modal(isNew ? 'Add employee' : 'Edit employee', '<div class="fields">' + field('e-name', 'Full name', e.name, '', 'wide') + field('e-code', 'Employee ID (used to log in)', e.code) + field('e-pin', 'Login PIN', e.pin, 'inputmode="numeric"') + field('e-phone', 'Phone', e.phone, 'inputmode="tel"') + field('e-dept', 'Department', e.dept) + field('e-role', 'Designation', e.role) + field('e-join', 'Joining date', e.join, 'type="date"') +
+    '<label class="field switch" style="flex-direction:row;align-items:center"><span>Active</span><input id="e-active" type="checkbox" style="width:22px;min-height:22px" ' + (e.active ? 'checked' : '') + '></label></div>' + errP(),
+    (!isNew ? '<button class="btn danger" data-act="staffDeleteAsk" data-id="' + e.id + '">Delete</button>' : '') + footBtns('Save', 'staffSave', e.id || ''));
+}
+function exportModal(title, text, name, mime) {
+  modal(title, '<textarea class="code" id="x-text" readonly>' + esc(text) + '</textarea><p class="muted small">Copy the text, or download it as a file.</p>',
+    '<button class="btn" data-act="xCopy">' + ic('copy') + 'Copy</button><button class="btn primary" data-act="xDown" data-name="' + name + '" data-mime="' + mime + '">' + ic('download') + 'Download</button>');
+}
+
+var actions = {
+  theme: function (d) { db.settings.theme = d.v; save(); render(); },
+  role: function (d) { ui.loginRole = d.v; render(); },
+  demoEmp: function () { var e = empById(1); if (e) { setSession({ role: 'emp', id: 1 }); ui.tab = 'today'; render(); } },
+  demoAdmin: function () { setSession({ role: 'admin' }); ui.tab = 'dash'; render(); },
+  logout: function () { setSession(null); render(); },
+  nav: function (d) { ui.tab = d.v; render(); window.scrollTo(0, 0); },
+  mPrev: function () { var p = ui.month.split('-').map(Number), x = new Date(p[0], p[1] - 2, 1); ui.month = ymd(x).slice(0, 7); render(); },
+  mNext: function () { var p = ui.month.split('-').map(Number), x = new Date(p[0], p[1], 1); ui.month = ymd(x).slice(0, 7); render(); },
+  dPrev: function () { ui.day = ymd(addDays(pd(ui.day), -1)); render(); },
+  dNext: function () { ui.day = ymd(addDays(pd(ui.day), 1)); render(); },
+  dashFilter: function (d) { ui.dashFilter = d.v; render(); },
+  leaveFilter: function (d) { ui.leaveFilter = d.v; render(); },
+  punch: function () {
+    var e = me(); if (!e) return;
+    var now = Date.now(), ds = ymd(new Date(now)), r = idx().get(e.id + '|' + ds), s = db.settings;
+    if (!r || !r.in) {
+      var late = now > at(new Date(now), s.start) + s.grace * 60000, status = late ? 'LATE' : 'PRESENT';
+      if (r) { r.in = now; r.out = null; r.status = status; } else db.att.push({ id: nid(), emp: e.id, date: ds, in: now, out: null, status: status, note: '' });
+      toast(late ? 'Checked in. Marked late.' : 'Checked in. Have a good day.');
+    } else if (!r.out) {
+      r.out = now; if (now - r.in < s.halfHrs * 36e5) r.status = 'HALF_DAY';
+      toast('Checked out. See you tomorrow.');
+    }
+    save(); render();
+  },
+  closeModal: closeModal,
+  pinOpen: pinModal,
+  pinSave: function () {
+    var old = v('p0'), n1 = v('p1'), n2 = v('p2'), admin = session.role === 'admin', cur = admin ? db.settings.adminPin : me().pin;
+    if (old !== cur) return showErr('The current PIN is not right.');
+    if (!/^\d{4,8}$/.test(n1)) return showErr('Use 4 to 8 digits for the new PIN.');
+    if (n1 !== n2) return showErr('The two new PINs do not match.');
+    if (admin) db.settings.adminPin = n1; else me().pin = n1;
+    save(); closeModal(); render(); toast('PIN changed');
+  },
+  leaveNew: function () {
+    modal('Apply for leave', '<div class="chips" id="ltype">' + ['Casual', 'Sick', 'Paid', 'Unpaid'].map(function (t, i) { return '<button class="pick" data-act="leaveType" data-v="' + t + '" aria-pressed="' + (i === 0) + '">' + t + '</button>'; }).join('') + '</div>' +
+      '<div class="fields">' + field('l-from', 'From', ymd(new Date()), 'type="date"') + field('l-to', 'To', ymd(new Date()), 'type="date"') + '</div><label class="field"><span>Reason</span><textarea id="l-reason"></textarea></label>' + errP(), footBtns('Send request', 'leaveSave'));
+    draft = { type: 'Casual' };
+  },
+  leaveType: function (d) { draft.type = d.v; document.querySelectorAll('#ltype .pick').forEach(function (b) { b.setAttribute('aria-pressed', b.dataset.v === d.v); }); },
+  leaveSave: function () {
+    var f = v('l-from'), t = v('l-to'), r = v('l-reason').trim();
+    if (!f || !t) return showErr('Pick both dates.');
+    if (t < f) return showErr('The end date cannot be before the start date.');
+    if (!r) return showErr('Add a short reason.');
+    db.leaves.push({ id: nid(), emp: me().id, type: draft.type, from: f, to: t, reason: r, status: 'PENDING', at: Date.now() });
+    save(); closeModal(); render(); toast('Leave request sent');
+  },
+  leaveCancel: function (d) { db.leaves = db.leaves.filter(function (l) { return l.id !== Number(d.id); }); save(); render(); toast('Request cancelled'); },
+  leaveDecide: function (d) { var l = db.leaves.find(function (x) { return x.id === Number(d.id); }); if (l) { l.status = d.v === 'yes' ? 'APPROVED' : 'REJECTED'; save(); render(); toast(d.v === 'yes' ? 'Leave approved' : 'Leave rejected'); } },
+  markOpen: function (d) { markModal(empById(Number(d.id))); },
+  markStatus: function (d) {
+    draft.status = d.v; document.querySelectorAll('#mstat .pick').forEach(function (b) { b.setAttribute('aria-pressed', b.dataset.v === d.v); });
+    $('#mtimes').hidden = ['PRESENT', 'LATE', 'HALF_DAY'].indexOf(d.v) < 0;
+  },
+  markSave: function (d) {
+    var id = Number(d.id), ds = ui.day, st = draft.status, times = ['PRESENT', 'LATE', 'HALF_DAY'].indexOf(st) >= 0, day = pd(ds);
+    function ms(id2) { var t = v(id2); return t ? at(day, t) : null; }
+    var i = times ? ms('m-in') : null, o = times ? ms('m-out') : null;
+    if (i && o && o < i) return showErr('Check-out cannot be before check-in.');
+    var r = idx().get(id + '|' + ds);
+    if (r) { r.status = st; r.in = i; r.out = o; r.note = v('m-note').trim(); } else db.att.push({ id: nid(), emp: id, date: ds, in: i, out: o, status: st, note: v('m-note').trim() });
+    save(); closeModal(); render(); toast('Attendance updated');
+  },
+  markReset: function (d) { var id = Number(d.id); db.att = db.att.filter(function (a) { return !(a.emp === id && a.date === ui.day); }); save(); closeModal(); render(); toast('Reset to automatic'); },
+  staffNew: function () { staffModal(null); },
+  staffEdit: function (d) { staffModal(empById(Number(d.id))); },
+  staffSave: function (d) {
+    var id = d.id ? Number(d.id) : 0, name = v('e-name').trim(), code = v('e-code').trim().replace(/\s+/g, ''), pin = v('e-pin').trim();
+    if (!name) return showErr('Enter the employee name.');
+    if (!code) return showErr('Enter an employee ID.');
+    if (!/^\d{4,8}$/.test(pin)) return showErr('The PIN needs 4 to 8 digits.');
+    if (db.employees.some(function (x) { return x.id !== id && x.code.toLowerCase() === code.toLowerCase(); })) return showErr('Employee ID ' + code + ' is already used.');
+    var data = { code: code, name: name, pin: pin, phone: v('e-phone').trim(), dept: v('e-dept').trim(), role: v('e-role').trim(), join: v('e-join') || ymd(new Date()), active: $('#e-active').checked };
+    if (id) Object.assign(empById(id), data); else db.employees.push(Object.assign({ id: nid() }, data));
+    save(); closeModal(); render(); toast('Employee saved');
+  },
+  staffDeleteAsk: function (d) {
+    var e = empById(Number(d.id));
+    modal('Delete ' + esc(e.name) + '?', '<p>Their attendance and leave records are deleted too. This cannot be undone.</p><p class="muted">To keep the history, switch the employee to inactive instead.</p>',
+      '<button class="btn" data-act="closeModal">Keep employee</button><button class="btn danger solid" data-act="staffDelete" data-id="' + e.id + '">Delete</button>');
+  },
+  staffDelete: function (d) {
+    var id = Number(d.id);
+    db.employees = db.employees.filter(function (e) { return e.id !== id; }); db.att = db.att.filter(function (a) { return a.emp !== id; }); db.leaves = db.leaves.filter(function (l) { return l.emp !== id; });
+    save(); closeModal(); render(); toast('Employee deleted');
+  },
+  calOpen: function (d) {
+    var e = empById(Number(d.id)), p = ui.month.split('-').map(Number);
+    modal(esc(e.name) + ', ' + MONTHS[p[1] - 1] + ' ' + p[0], calendar(e, ui.month) + tiles(summary(e, ui.month)), '<button class="btn primary" data-act="closeModal">Close</button>');
+  },
+  toggleOff: function (d) { var n = Number(d.d), i = db.settings.off.indexOf(n); if (i >= 0) db.settings.off.splice(i, 1); else db.settings.off.push(n); save(); render(); },
+  holidayNew: function () { modal('Add holiday', field('h-date', 'Date', ymd(new Date()), 'type="date"') + field('h-name', 'Holiday name', '') + errP(), footBtns('Add holiday', 'holidaySave')); },
+  holidaySave: function () {
+    var d = v('h-date'), n = v('h-name').trim(); if (!d) return showErr('Pick a date.'); if (!n) return showErr('Enter a name.');
+    db.holidays = db.holidays.filter(function (h) { return h.date !== d; }); db.holidays.push({ id: nid(), date: d, name: n });
+    save(); closeModal(); render(); toast('Holiday added');
+  },
+  holidayDel: function (d) { db.holidays = db.holidays.filter(function (h) { return h.id !== Number(d.id); }); save(); render(); },
+  csv: function () { exportModal('Report for ' + ui.month, csvFor(ui.month), 'Hazri-attendance-' + ui.month + '.csv', 'text/csv'); },
+  backup: function () { exportModal('Back up', JSON.stringify(db), 'hazri-backup.json', 'application/json'); },
+  xCopy: function () { var t = $('#x-text'); copyText(t.value, t); },
+  xDown: function (d) { download(d.name, (d.mime === 'text/csv' ? '\uFEFF' : '') + $('#x-text').value, d.mime); },
+  restoreOpen: function () { modal('Restore', '<p class="muted">Paste a backup here. It replaces everything saved in this browser.</p><textarea class="code" id="r-text" style="min-height:200px"></textarea>' + errP(), footBtns('Restore', 'restoreSave')); },
+  restoreSave: function () {
+    try {
+      var d = JSON.parse(v('r-text'));
+      if (!d || !Array.isArray(d.employees) || !Array.isArray(d.att)) throw 0;
+      db = Object.assign(defaults(), d); db.settings = Object.assign(defaults().settings, d.settings || {});
+      save(); closeModal(); render(); toast('Backup restored');
+    } catch (e) { showErr('That text is not a Hazri backup.'); }
+  },
+  freshAsk: function () { modal('Remove sample data?', '<p>This deletes the sample employees, attendance and leave requests so you can start with your own. Your admin PIN stays the same.</p>', '<button class="btn" data-act="closeModal">Keep sample data</button><button class="btn danger solid" data-act="fresh">Remove sample data</button>'); },
+  fresh: function () { var pin = db.settings.adminPin, th = db.settings.theme; db = defaults(); db.settings.adminPin = pin; db.settings.theme = th; save(); closeModal(); ui.tab = 'dash'; render(); toast('Sample data removed. Add your first employee.'); }
+};
+
+document.addEventListener('click', function (ev) {
+  var t = ev.target.closest('[data-act]'); if (!t) return;
+  var fn = actions[t.dataset.act]; if (fn) { ev.preventDefault(); fn(t.dataset); }
+});
+document.addEventListener('submit', function (ev) { if (ev.target.id === 'loginForm') { ev.preventDefault(); doLogin(); } });
+document.addEventListener('input', function (ev) {
+  if (ev.target.id === 'staffQ') { ui.staffQ = ev.target.value; $('#staffList').innerHTML = staffRows(); }
+});
+document.addEventListener('change', function (ev) {
+  var k = ev.target.dataset && ev.target.dataset.set; if (!k) return;
+  var val = ev.target.value;
+  if (k === 'grace') val = Math.max(0, Math.min(120, parseInt(val, 10) || 0));
+  if (k === 'halfHrs') val = Math.max(1, Math.min(12, parseInt(val, 10) || 4));
+  if ((k === 'start' || k === 'end') && !val) return;
+  if (k === 'company' && !val.trim()) val = 'Your Company';
+  db.settings[k] = val; save(); toast('Saved');
+});
+document.addEventListener('keydown', function (ev) { if (ev.key === 'Escape' && !$('#modal').hidden) closeModal(); });
+
+render();
+})();
+</script>
+</body>
+</html>
